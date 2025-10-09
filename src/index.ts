@@ -2,6 +2,8 @@ import * as fs from 'fs'
 import * as path from 'path'
 import {mealyToMoore, mooreToMealy} from './converter'
 import {generateMealyDot, generateMooreDot} from './generator'
+import {minimizeMealy} from './minimizer/mealy'
+import {minimizeMoore} from './minimizer/moore'
 import {detectMachineType, parse} from './parser'
 
 function generateOutputFileName(inputFile: string): string {
@@ -14,7 +16,8 @@ function generateOutputFileName(inputFile: string): string {
 async function main(): Promise<void> {
 	const args = process.argv.slice(2)
 	const inputFile = args[0]
-	const outputFile = args[1] || generateOutputFileName(inputFile)
+	const shouldMinimize = args.includes('--minimize') || args.includes('-m')
+	const outputFile = args.find(arg => !arg.startsWith('-') && arg !== inputFile) || generateOutputFileName(inputFile)
 
 	try {
 		const inputContent = fs.readFileSync(inputFile, 'utf-8')
@@ -32,13 +35,27 @@ async function main(): Promise<void> {
 
 		if (machineType === 'mealy') {
 			console.log('Конвертируем из Мили в Мура...')
-			const mooreMachine = mealyToMoore(dotGraph)
+			let mooreMachine = mealyToMoore(dotGraph)
+
+			if (shouldMinimize) {
+				console.log('Минимизируем автомат Мура...')
+				mooreMachine = minimizeMoore(mooreMachine)
+				console.log('Минимизация завершена')
+			}
+
 			outputContent = generateMooreDot(mooreMachine)
 			console.log('Конвертация завершена: Мили -> Мура')
 		}
 		else {
 			console.log('Конвертируем из Мура в Мили...')
-			const mealyMachine = mooreToMealy(dotGraph)
+			let mealyMachine = mooreToMealy(dotGraph)
+
+			if (shouldMinimize) {
+				console.log('Минимизируем автомат Мили...')
+				mealyMachine = minimizeMealy(mealyMachine)
+				console.log('Минимизация завершена')
+			}
+
 			outputContent = generateMealyDot(mealyMachine)
 			console.log('Конвертация завершена: Мура -> Мили')
 		}

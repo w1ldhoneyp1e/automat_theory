@@ -66,13 +66,14 @@ function parseMooreFromDot(dotGraph: DotGraph): MooreMachine {
 function mealyToMoore(dotGraph: DotGraph): MooreMachine {
 	const mealyMachine = parseMealyFromDot(dotGraph)
 
-	const destinationStates = new Set<string>()
+	const allStates = new Set<string>()
 	mealyMachine.transitions.forEach(transition => {
-		destinationStates.add(`${transition.to}_${transition.output}`)
+		allStates.add(`${transition.from}_${transition.output}`)
+		allStates.add(`${transition.to}_${transition.output}`)
 	})
 
 	const mooreStates: MooreState[] = []
-	destinationStates.forEach(stateName => {
+	allStates.forEach(stateName => {
 		const [, output] = stateName.split('_')
 		mooreStates.push({
 			name: stateName,
