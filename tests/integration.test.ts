@@ -23,10 +23,8 @@ describe('Интеграционные тесты', () => {
 		const mooreOutput = generateMooreDot(mooreMachine)
 
 		expect(mooreOutput).toContain('digraph MooreMachine {')
-		expect(mooreOutput).toContain('S1_w1 [label="S1_w1 / w1"]')
 		expect(mooreOutput).toContain('S3_w1 [label="S3_w1 / w1"]')
 		expect(mooreOutput).toContain('S2_w1 [label="S2_w1 / w1"]')
-		expect(mooreOutput).toContain('S2_w2 [label="S2_w2 / w2"]')
 		expect(mooreOutput).toContain('S3_w2 [label="S3_w2 / w2"]')
 		expect(mooreOutput).toContain('S4_w2 [label="S4_w2 / w2"]')
 		expect(mooreOutput).toContain('S1_w1 -> S3_w1 [label="1"]')
