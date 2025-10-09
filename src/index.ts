@@ -1,7 +1,11 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import {detectMachineType, parse} from './parser'
-import {processAsIs, processConversion} from './processor'
+import {
+	processAsIs,
+	processConversion,
+	processMinimization,
+} from './processor'
 
 function generateOutputFileName(inputFile: string): string {
 	const ext = path.extname(inputFile)
@@ -21,9 +25,24 @@ async function main(): Promise<void> {
 		const inputContent = fs.readFileSync(inputFile, 'utf-8')
 		const dotGraph = parse(inputContent)
 		const machineType = detectMachineType(dotGraph)
-		const outputContent = shouldConvert
-			? processConversion(dotGraph, machineType, shouldMinimize)
-			: processAsIs(inputContent)
+
+		let outputContent: string
+
+		if (shouldConvert && shouldMinimize) {
+			const convertedContent = processConversion(dotGraph, machineType)
+			const convertedDotGraph = parse(convertedContent)
+			const convertedMachineType = detectMachineType(convertedDotGraph)
+			outputContent = processMinimization(convertedDotGraph, convertedMachineType)
+		}
+		else if (shouldConvert) {
+			outputContent = processConversion(dotGraph, machineType)
+		}
+		else if (shouldMinimize) {
+			outputContent = processMinimization(dotGraph, machineType)
+		}
+		else {
+			outputContent = processAsIs(inputContent)
+		}
 
 		fs.writeFileSync(outputFile, outputContent, 'utf-8')
 		console.log('Результат:')
