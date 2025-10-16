@@ -1,4 +1,5 @@
 import {mealyToMoore, mooreToMealy} from './converter'
+import {determinizeMealy, isMealyDeterministic} from './determinizer'
 import {generateMealyDot, generateMooreDot} from './generator'
 import {minimizeMealy} from './minimizer/mealy'
 import {minimizeMoore} from './minimizer/moore'
@@ -97,8 +98,36 @@ function processMinimization(dotGraph: DotGraph, machineType: 'mealy' | 'moore')
 	return processMooreMinimization(dotGraph)
 }
 
+function processMealyDeterminization(dotGraph: DotGraph): string {
+	const mealyMachine = parseMealyFromDot(dotGraph)
+	const determinizedMachine = determinizeMealy(mealyMachine)
+
+	if (isMealyDeterministic(mealyMachine)) {
+		console.log('Автомат уже является детерминированным')
+	}
+
+	return generateMealyDot(determinizedMachine)
+}
+
+function processDeterminization(dotGraph: DotGraph, machineType: 'mealy' | 'moore'): string {
+	if (machineType === 'mealy') {
+		return processMealyDeterminization(dotGraph)
+	}
+
+	const mealyMachine = mooreToMealy(dotGraph)
+
+	if (isMealyDeterministic(mealyMachine)) {
+		console.log('Автомат уже является детерминированным')
+		return generateMealyDot(mealyMachine)
+	}
+
+	const determinizedMealy = determinizeMealy(mealyMachine)
+	return generateMealyDot(determinizedMealy)
+}
+
 export {
 	processAsIs,
 	processConversion,
 	processMinimization,
+	processDeterminization,
 }

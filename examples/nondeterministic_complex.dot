@@ -1,0 +1,13 @@
+digraph machine {
+S0 [label = "S0"]
+S1 [label = "S1"]
+S2 [label = "S2"]
+S3 [label = "S3"]
+
+S0 -> S1 [label = "a/x"]
+S0 -> S2 [label = "a/x"]
+S1 -> S3 [label = "b/y"]
+S2 -> S3 [label = "b/z"]
+S3 -> S0 [label = "c/w"]
+}
+

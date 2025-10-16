@@ -1,0 +1,6 @@
+digraph MealyMachine {
+  S1 [label="S1"];
+  S4 [label="S4"];
+
+  S4 -> S1 [label="c/y5"];
+}

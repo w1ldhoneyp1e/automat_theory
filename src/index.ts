@@ -4,6 +4,7 @@ import {detectMachineType, parse} from './parser'
 import {
 	processAsIs,
 	processConversion,
+	processDeterminization,
 	processMinimization,
 } from './processor'
 
@@ -19,6 +20,7 @@ async function main(): Promise<void> {
 	const inputFile = args[0]
 	const shouldConvert = args.includes('-c')
 	const shouldMinimize = args.includes('--minimize') || args.includes('-m')
+	const shouldDeterminize = args.includes('--determinize') || args.includes('-d')
 	const outputFile = args.find(arg => !arg.startsWith('-') && arg !== inputFile) || generateOutputFileName(inputFile)
 
 	try {
@@ -28,11 +30,26 @@ async function main(): Promise<void> {
 
 		let outputContent: string
 
-		if (shouldConvert && shouldMinimize) {
+		if (shouldDeterminize && shouldMinimize) {
+			const determinizedContent = processDeterminization(dotGraph, machineType)
+			const determinizedDotGraph = parse(determinizedContent)
+			const determinizedMachineType = detectMachineType(determinizedDotGraph)
+			outputContent = processMinimization(determinizedDotGraph, determinizedMachineType)
+		}
+		else if (shouldConvert && shouldMinimize) {
 			const convertedContent = processConversion(dotGraph, machineType)
 			const convertedDotGraph = parse(convertedContent)
 			const convertedMachineType = detectMachineType(convertedDotGraph)
 			outputContent = processMinimization(convertedDotGraph, convertedMachineType)
+		}
+		else if (shouldConvert && shouldDeterminize) {
+			const determinizedContent = processDeterminization(dotGraph, machineType)
+			const determinizedDotGraph = parse(determinizedContent)
+			const determinizedMachineType = detectMachineType(determinizedDotGraph)
+			outputContent = processConversion(determinizedDotGraph, determinizedMachineType)
+		}
+		else if (shouldDeterminize) {
+			outputContent = processDeterminization(dotGraph, machineType)
 		}
 		else if (shouldConvert) {
 			outputContent = processConversion(dotGraph, machineType)
