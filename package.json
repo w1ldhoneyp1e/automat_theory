@@ -2,11 +2,9 @@
   "name": "automaton-converter",
   "version": "1.0.0",
   "description": "Конвертер автоматов между форматами Мили и Мура",
-  "main": "dist/index.js",
+  "main": "src/index.ts",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
+    "start": "ts-node src/index.ts",
     "test": "jest",
     "lint": "eslint src tests --ext .ts",
     "lint:fix": "eslint src tests --ext .ts --fix"

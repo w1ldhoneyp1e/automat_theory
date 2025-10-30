@@ -1,6 +1,8 @@
 import {mealyToMoore, mooreToMealy} from './converter'
 import {determinizeMealy, isMealyDeterministic} from './determinizer'
 import {generateMealyDot, generateMooreDot} from './generator'
+import {parseGrammar} from './grammarParser'
+import {dfaToDot, grammarToDFA} from './grammarToDfa'
 import {minimizeMealy} from './minimizer/mealy'
 import {minimizeMoore} from './minimizer/moore'
 import {
@@ -125,9 +127,16 @@ function processDeterminization(dotGraph: DotGraph, machineType: 'mealy' | 'moor
 	return generateMealyDot(determinizedMealy)
 }
 
+function processGrammarToDFA(grammarText: string): string {
+	const grammar = parseGrammar(grammarText)
+	const dfa = grammarToDFA(grammar)
+	return dfaToDot(dfa)
+}
+
 export {
 	processAsIs,
 	processConversion,
 	processMinimization,
 	processDeterminization,
+	processGrammarToDFA,
 }

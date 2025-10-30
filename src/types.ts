@@ -44,6 +44,18 @@ interface DotGraph {
 	edges: DotEdge[],
 }
 
+interface GrammarRule {
+	left: string,
+	right: string[],
+}
+
+interface Grammar {
+	nonterminals: string[],
+	terminals: string[],
+	rules: GrammarRule[],
+	startSymbol: string,
+}
+
 export {
 	MealyTransition,
 	MealyMachine,
@@ -53,4 +65,6 @@ export {
 	DotNode,
 	DotEdge,
 	DotGraph,
+	GrammarRule,
+	Grammar,
 }

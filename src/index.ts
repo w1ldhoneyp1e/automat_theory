@@ -5,6 +5,7 @@ import {
 	processAsIs,
 	processConversion,
 	processDeterminization,
+	processGrammarToDFA,
 	processMinimization,
 } from './processor'
 
@@ -21,44 +22,51 @@ async function main(): Promise<void> {
 	const shouldConvert = args.includes('-c')
 	const shouldMinimize = args.includes('--minimize') || args.includes('-m')
 	const shouldDeterminize = args.includes('--determinize') || args.includes('-d')
+	const shouldGrammarToDFA = args.includes('--grammar-to-dfa') || args.includes('-g')
 	const outputFile = args.find(arg => !arg.startsWith('-') && arg !== inputFile) || generateOutputFileName(inputFile)
 
 	try {
 		const inputContent = fs.readFileSync(inputFile, 'utf-8')
-		const dotGraph = parse(inputContent)
-		const machineType = detectMachineType(dotGraph)
 
 		let outputContent: string
 
-		if (shouldDeterminize && shouldMinimize) {
-			const determinizedContent = processDeterminization(dotGraph, machineType)
-			const determinizedDotGraph = parse(determinizedContent)
-			const determinizedMachineType = detectMachineType(determinizedDotGraph)
-			outputContent = processMinimization(determinizedDotGraph, determinizedMachineType)
-		}
-		else if (shouldConvert && shouldMinimize) {
-			const convertedContent = processConversion(dotGraph, machineType)
-			const convertedDotGraph = parse(convertedContent)
-			const convertedMachineType = detectMachineType(convertedDotGraph)
-			outputContent = processMinimization(convertedDotGraph, convertedMachineType)
-		}
-		else if (shouldConvert && shouldDeterminize) {
-			const determinizedContent = processDeterminization(dotGraph, machineType)
-			const determinizedDotGraph = parse(determinizedContent)
-			const determinizedMachineType = detectMachineType(determinizedDotGraph)
-			outputContent = processConversion(determinizedDotGraph, determinizedMachineType)
-		}
-		else if (shouldDeterminize) {
-			outputContent = processDeterminization(dotGraph, machineType)
-		}
-		else if (shouldConvert) {
-			outputContent = processConversion(dotGraph, machineType)
-		}
-		else if (shouldMinimize) {
-			outputContent = processMinimization(dotGraph, machineType)
+		if (shouldGrammarToDFA) {
+			outputContent = processGrammarToDFA(inputContent)
 		}
 		else {
-			outputContent = processAsIs(inputContent)
+			const dotGraph = parse(inputContent)
+			const machineType = detectMachineType(dotGraph)
+
+			if (shouldDeterminize && shouldMinimize) {
+				const determinizedContent = processDeterminization(dotGraph, machineType)
+				const determinizedDotGraph = parse(determinizedContent)
+				const determinizedMachineType = detectMachineType(determinizedDotGraph)
+				outputContent = processMinimization(determinizedDotGraph, determinizedMachineType)
+			}
+			else if (shouldConvert && shouldMinimize) {
+				const convertedContent = processConversion(dotGraph, machineType)
+				const convertedDotGraph = parse(convertedContent)
+				const convertedMachineType = detectMachineType(convertedDotGraph)
+				outputContent = processMinimization(convertedDotGraph, convertedMachineType)
+			}
+			else if (shouldConvert && shouldDeterminize) {
+				const determinizedContent = processDeterminization(dotGraph, machineType)
+				const determinizedDotGraph = parse(determinizedContent)
+				const determinizedMachineType = detectMachineType(determinizedDotGraph)
+				outputContent = processConversion(determinizedDotGraph, determinizedMachineType)
+			}
+			else if (shouldDeterminize) {
+				outputContent = processDeterminization(dotGraph, machineType)
+			}
+			else if (shouldConvert) {
+				outputContent = processConversion(dotGraph, machineType)
+			}
+			else if (shouldMinimize) {
+				outputContent = processMinimization(dotGraph, machineType)
+			}
+			else {
+				outputContent = processAsIs(inputContent)
+			}
 		}
 
 		fs.writeFileSync(outputFile, outputContent, 'utf-8')
