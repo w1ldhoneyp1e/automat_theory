@@ -5,6 +5,7 @@ import {parseGrammar} from './grammarParser'
 import {dfaToDot, grammarToDFA} from './grammarToDfa'
 import {minimizeMealy} from './minimizer/mealy'
 import {minimizeMoore} from './minimizer/moore'
+import {nfaToDot, regexToNFA} from './regexToNfa'
 import {
 	type DotGraph,
 	type MealyMachine,
@@ -133,10 +134,17 @@ function processGrammarToDFA(grammarText: string): string {
 	return dfaToDot(dfa)
 }
 
+function processRegexToNFA(regexText: string): string {
+	const regex = regexText.trim()
+	const nfa = regexToNFA(regex)
+	return nfaToDot(nfa)
+}
+
 export {
 	processAsIs,
 	processConversion,
 	processMinimization,
 	processDeterminization,
 	processGrammarToDFA,
+	processRegexToNFA,
 }

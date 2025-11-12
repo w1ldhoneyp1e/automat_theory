@@ -7,12 +7,16 @@ import {
 	processDeterminization,
 	processGrammarToDFA,
 	processMinimization,
+	processRegexToNFA,
 } from './processor'
 
-function generateOutputFileName(inputFile: string): string {
+function generateOutputFileName(inputFile: string, forceDot: boolean = false): string {
 	const ext = path.extname(inputFile)
 	const baseName = path.basename(inputFile, ext)
 	const dir = path.dirname(inputFile)
+	if (forceDot) {
+		return path.join(dir, `${baseName}.dot`)
+	}
 	return path.join(dir, `${baseName}_converted${ext}`)
 }
 
@@ -23,14 +27,19 @@ async function main(): Promise<void> {
 	const shouldMinimize = args.includes('--minimize') || args.includes('-m')
 	const shouldDeterminize = args.includes('--determinize') || args.includes('-d')
 	const shouldGrammarToDFA = args.includes('--grammar-to-dfa') || args.includes('-g')
-	const outputFile = args.find(arg => !arg.startsWith('-') && arg !== inputFile) || generateOutputFileName(inputFile)
+	const shouldRegexToNFA = args.includes('--regex-to-nfa') || args.includes('-r')
+	const outputFile = args.find(arg => !arg.startsWith('-') && arg !== inputFile)
+		|| generateOutputFileName(inputFile, shouldRegexToNFA)
 
 	try {
 		const inputContent = fs.readFileSync(inputFile, 'utf-8')
 
 		let outputContent: string
 
-		if (shouldGrammarToDFA) {
+		if (shouldRegexToNFA) {
+			outputContent = processRegexToNFA(inputContent)
+		}
+		else if (shouldGrammarToDFA) {
 			outputContent = processGrammarToDFA(inputContent)
 		}
 		else {
