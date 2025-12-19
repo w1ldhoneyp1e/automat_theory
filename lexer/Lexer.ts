@@ -22,6 +22,9 @@ interface Token {
 }
 
 class Lexer {
+	private static readonly MAX_ID_LENGTH = 255
+	private static readonly MAX_NUMBER_LENGTH = 30
+
 	private input: string
 	private position: number
 
@@ -64,12 +67,18 @@ class Lexer {
 		while (this.position < this.input.length) {
 			const char = this.currentChar()
 			if (char && this.isIdChar(char)) {
+				if (id.length >= Lexer.MAX_ID_LENGTH) {
+					throw new Error(`Идентификатор слишком длинный (максимум ${Lexer.MAX_ID_LENGTH} символов) в позиции ${this.position}`)
+				}
 				id += char
 				this.position++
 			}
 			else {
 				break
 			}
+		}
+		if (id.length === 0) {
+			throw new Error(`Пустой идентификатор в позиции ${this.position}`)
 		}
 		return id
 	}
@@ -80,10 +89,16 @@ class Lexer {
 		while (this.position < this.input.length) {
 			const char = this.currentChar()
 			if (char && this.isDigit(char)) {
+				if (number.length >= Lexer.MAX_NUMBER_LENGTH) {
+					throw new Error(`Число слишком длинное (максимум ${Lexer.MAX_NUMBER_LENGTH} символов) в позиции ${this.position}`)
+				}
 				number += char
 				this.position++
 			}
 			else if (char === '.' && !hasDot) {
+				if (number.length >= Lexer.MAX_NUMBER_LENGTH) {
+					throw new Error(`Число слишком длинное (максимум ${Lexer.MAX_NUMBER_LENGTH} символов) в позиции ${this.position}`)
+				}
 				number += char
 				hasDot = true
 				this.position++
@@ -91,6 +106,9 @@ class Lexer {
 			else {
 				break
 			}
+		}
+		if (number.length === 0) {
+			throw new Error(`Пустое число в позиции ${this.position}`)
 		}
 		return number
 	}
