@@ -1,8 +1,14 @@
 import {mealyToMoore, mooreToMealy} from './converter'
-import {determinizeMealy, isMealyDeterministic} from './determinizer'
+import {
+	determinizeMealy,
+	determinizeNFA,
+	dfaToDot,
+	isMealyDeterministic,
+} from './determinizer'
+import {minimizeDFA} from './dfaMinimizer'
 import {generateMealyDot, generateMooreDot} from './generator'
 import {parseGrammar} from './grammarParser'
-import {dfaToDot, grammarToDFA} from './grammarToDfa'
+import {dfaToDot as grammarDfaToDot, grammarToDFA} from './grammarToDfa'
 import {minimizeMealy} from './minimizer/mealy'
 import {minimizeMoore} from './minimizer/moore'
 import {nfaToDot, regexToNFA} from './regexToNfa'
@@ -131,12 +137,19 @@ function processDeterminization(dotGraph: DotGraph, machineType: 'mealy' | 'moor
 function processGrammarToDFA(grammarText: string): string {
 	const grammar = parseGrammar(grammarText)
 	const dfa = grammarToDFA(grammar)
-	return dfaToDot(dfa)
+	return grammarDfaToDot(dfa)
 }
 
-function processRegexToNFA(regexText: string): string {
+function processRegexToNFA(regexText: string, shouldMinimize: boolean = false): string {
 	const regex = regexText.trim()
 	const nfa = regexToNFA(regex)
+
+	if (shouldMinimize) {
+		const dfa = determinizeNFA(nfa)
+		const minimizedDfa = minimizeDFA(dfa)
+		return dfaToDot(minimizedDfa)
+	}
+
 	return nfaToDot(nfa)
 }
 

@@ -37,7 +37,7 @@ async function main(): Promise<void> {
 		let outputContent: string
 
 		if (shouldRegexToNFA) {
-			outputContent = processRegexToNFA(inputContent)
+			outputContent = processRegexToNFA(inputContent, shouldMinimize)
 		}
 		else if (shouldGrammarToDFA) {
 			outputContent = processGrammarToDFA(inputContent)
