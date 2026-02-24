@@ -1,5 +1,38 @@
 import {type Grammar, type GrammarRule} from './types'
 
+function parseLeft(leftRaw: string): string {
+	const t = leftRaw.trim()
+	if (t.startsWith('<') && t.endsWith('>')) {
+		return t.slice(1, -1)
+	}
+	return t
+}
+
+function tokenizeAlternative(alt: string): string[] {
+	const s = alt.trim()
+	const tokens: string[] = []
+	let i = 0
+	while (i < s.length) {
+		while (i < s.length && /\s/.test(s[i])) {
+			i++
+		}
+		if (i >= s.length) break
+		if (s[i] === '<') {
+			const end = s.indexOf('>', i)
+			if (end === -1) {
+				throw new Error(`Не закрыта угловая скобка в: ${s}`)
+			}
+			tokens.push(s.slice(i + 1, end))
+			i = end + 1
+		}
+		else {
+			tokens.push(s[i])
+			i++
+		}
+	}
+	return tokens
+}
+
 function parseGrammar(grammarText: string): Grammar {
 	const lines = grammarText
 		.split('\n')
@@ -8,28 +41,32 @@ function parseGrammar(grammarText: string): Grammar {
 
 	const rules: GrammarRule[] = []
 	const allSymbols = new Set<string>()
+	const leftSides = new Set<string>()
 
 	for (const line of lines) {
 		if (line.includes('->')) {
-			const [left, rightPart] = line.split('->').map(s => s.trim())
+			const idx = line.indexOf('->')
+			const leftRaw = line.slice(0, idx).trim()
+			const rightPart = line.slice(idx + 2).trim()
+			const left = parseLeft(leftRaw)
+			leftSides.add(left)
 			const alternatives = rightPart.split('|').map(s => s.trim())
 
 			for (const alternative of alternatives) {
-				if (alternative === 'e') {
+				if (alternative === 'e' || alternative === '') {
 					rules.push({
 						left,
 						right: [],
 					})
 				}
 				else {
-					const symbols = alternative.split('').filter(s => s.trim().length > 0)
+					const symbols = tokenizeAlternative(alternative)
 					rules.push({
 						left,
 						right: symbols,
 					})
-
 					allSymbols.add(left)
-					symbols.forEach(s => allSymbols.add(s))
+					symbols.forEach(sym => allSymbols.add(sym))
 				}
 			}
 		}
@@ -41,16 +78,12 @@ function parseGrammar(grammarText: string): Grammar {
 
 	const nonterminals: string[] = []
 	const terminals: string[] = []
-
 	for (const symbol of allSymbols) {
-		if (isNonterminal(symbol)) {
+		if (leftSides.has(symbol)) {
 			nonterminals.push(symbol)
 		}
-		else if (isTerminal(symbol)) {
-			terminals.push(symbol)
-		}
 		else {
-			throw new Error(`Неизвестный тип символа: ${symbol}`)
+			terminals.push(symbol)
 		}
 	}
 
@@ -66,14 +99,6 @@ function parseGrammar(grammarText: string): Grammar {
 		rules,
 		startSymbol,
 	}
-}
-
-function isNonterminal(symbol: string): boolean {
-	return symbol.length === 1 && symbol >= 'A' && symbol <= 'Z'
-}
-
-function isTerminal(symbol: string): boolean {
-	return symbol.length === 1 && ((symbol >= 'a' && symbol <= 'z') || (symbol >= '0' && symbol <= '9'))
 }
 
 export {

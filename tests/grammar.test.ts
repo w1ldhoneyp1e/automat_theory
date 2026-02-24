@@ -48,12 +48,25 @@ describe('Grammar Parser', () => {
 		expect(grammar.startSymbol).toBe('S')
 	})
 
-	test('должен выбрасывать ошибку для неизвестного символа', () => {
+	test('допускает любые символы как терминалы', () => {
 		const grammarText = `
             S -> aA | @B
+            A -> a
+            B -> @
             `
+		const grammar = parseGrammar(grammarText)
+		expect(grammar.terminals).toContain('@')
+		expect(grammar.rules).toHaveLength(4)
+	})
 
-		expect(() => parseGrammar(grammarText)).toThrow('Неизвестный тип символа: @')
+	test('парсит угловые скобки: нетерминалы и терминалы', () => {
+		const grammarText = `
+            <idList> -> id <idList> | i
+            `
+		const grammar = parseGrammar(grammarText)
+		expect(grammar.nonterminals).toContain('idList')
+		expect(grammar.terminals).toEqual(expect.arrayContaining(['i', 'd']))
+		expect(grammar.startSymbol).toBe('idList')
 	})
 
 })
