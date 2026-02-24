@@ -7,6 +7,8 @@ import {
 } from './determinizer'
 import {minimizeDFA} from './dfaMinimizer'
 import {generateMealyDot, generateMooreDot} from './generator'
+import {toChomskyNormalForm} from './chomskyNormalForm'
+import {cyk} from './cyk'
 import {parseGrammar} from './grammarParser'
 import {dfaToDot as grammarDfaToDot, grammarToDFA} from './grammarToDfa'
 import {minimizeMealy} from './minimizer/mealy'
@@ -153,11 +155,37 @@ function processRegexToNFA(regexText: string, shouldMinimize: boolean = false): 
 	return nfaToDot(nfa)
 }
 
+function formatCykTable(w: string, table: string[][][]): string {
+	const lines: string[] = []
+	for (let i = 0; i < table.length; i++) {
+		for (let len = 1; len <= table[i].length; len++) {
+			const sub = w.substring(i, i + len)
+			const nts = table[i][len - 1]
+			if (nts.length > 0) {
+				lines.push(`  [${i},${i + len}) "${sub}" -> ${nts.join(', ')}`)
+			}
+		}
+	}
+	return lines.join('\n')
+}
+
+function processGrammarCYK(grammarText: string, word: string): string {
+	const grammar = parseGrammar(grammarText)
+	const cnf = toChomskyNormalForm(grammar)
+	const result = cyk(cnf, word)
+	const belongsStr = result.belongs ? 'да' : 'нет'
+	const tableStr = result.table.length > 0
+		? `Таблица CYK:\n${formatCykTable(word, result.table)}`
+		: ''
+	return `Грамматика (КНФ): ${cnf.rules.length} правил\nСтрока: "${word}"\nПринадлежность: ${belongsStr}\n${tableStr}`
+}
+
 export {
 	processAsIs,
 	processConversion,
-	processMinimization,
 	processDeterminization,
 	processGrammarToDFA,
+	processGrammarCYK,
+	processMinimization,
 	processRegexToNFA,
 }

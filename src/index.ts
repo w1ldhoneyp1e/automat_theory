@@ -6,6 +6,7 @@ import {
 	processConversion,
 	processDeterminization,
 	processGrammarToDFA,
+	processGrammarCYK,
 	processMinimization,
 	processRegexToNFA,
 } from './processor'
@@ -28,7 +29,12 @@ async function main(): Promise<void> {
 	const shouldDeterminize = args.includes('--determinize') || args.includes('-d')
 	const shouldGrammarToDFA = args.includes('--grammar-to-dfa') || args.includes('-g')
 	const shouldRegexToNFA = args.includes('--regex-to-nfa') || args.includes('-r')
-	const outputFile = args.find(arg => !arg.startsWith('-') && arg !== inputFile)
+	const cykIdx = args.findIndex(a => a === '--cyk' || a.startsWith('--cyk='))
+	const shouldCYK = cykIdx >= 0
+	const cykWord = shouldCYK
+		? (args[cykIdx].startsWith('--cyk=') ? args[cykIdx].slice(6) : args[cykIdx + 1])
+		: ''
+	const outputFile = args.find(arg => !arg.startsWith('-') && arg !== inputFile && arg !== cykWord)
 		|| generateOutputFileName(inputFile, shouldRegexToNFA)
 
 	try {
@@ -38,6 +44,12 @@ async function main(): Promise<void> {
 
 		if (shouldRegexToNFA) {
 			outputContent = processRegexToNFA(inputContent, shouldMinimize)
+		}
+		else if (shouldCYK) {
+			if (cykWord === undefined || (typeof cykWord === 'string' && cykWord.startsWith('-') && cykWord.length > 1)) {
+				throw new Error('Укажите строку для проверки: --cyk <строка> или --cyk=<строка>')
+			}
+			outputContent = processGrammarCYK(inputContent, cykWord ?? '')
 		}
 		else if (shouldGrammarToDFA) {
 			outputContent = processGrammarToDFA(inputContent)
