@@ -156,15 +156,21 @@ function processRegexToNFA(regexText: string, shouldMinimize: boolean = false): 
 }
 
 function formatCykTable(w: string, table: string[][][]): string {
+	const n = w.length
 	const lines: string[] = []
-	for (let i = 0; i < table.length; i++) {
-		for (let len = 1; len <= table[i].length; len++) {
+	lines.push('  Позиции:  ' + [...w].map((c, i) => `${i}`).join('   '))
+	lines.push('  Строка:   ' + [...w].map(c => ` ${c} `).join(' '))
+	lines.push('')
+	for (let len = 1; len <= n; len++) {
+		const rowCells: string[] = []
+		for (let i = 0; i <= n - len; i++) {
 			const sub = w.substring(i, i + len)
 			const nts = table[i][len - 1]
-			if (nts.length > 0) {
-				lines.push(`  [${i},${i + len}) "${sub}" -> ${nts.join(', ')}`)
-			}
+			const ntStr = nts.length > 0 ? nts.join(',') : '—'
+			rowCells.push(`[${i},${i + len}) "${sub}"→{${ntStr}}`)
 		}
+		const label = `len=${len}`
+		lines.push(`  ${label.padEnd(6)} ${rowCells.join('  ')}`)
 	}
 	return lines.join('\n')
 }
