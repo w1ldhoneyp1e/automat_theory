@@ -1,5 +1,5 @@
-import {type Grammar, type GrammarRule} from './types'
 import {eliminateEpsilonRules} from './epsilonElimination'
+import {type Grammar, type GrammarRule} from './types'
 
 function eliminateUnitRules(grammar: Grammar): Grammar {
 	const derivedBy = new Map<string, Set<string>>()
@@ -31,7 +31,10 @@ function eliminateUnitRules(grammar: Grammar): Grammar {
 			continue
 		}
 		for (const b of derivedBy.get(rule.left)!) {
-			newRules.push({left: b, right: rule.right})
+			newRules.push({
+				left: b,
+				right: rule.right,
+			})
 		}
 	}
 
@@ -45,8 +48,12 @@ function eliminateUnitRules(grammar: Grammar): Grammar {
 
 function getProductive(grammar: Grammar): Set<string> {
 	const productive = new Set<string>()
+	for (const rule of grammar.rules) {
+		if (rule.right.length === 0) {
+			productive.add(rule.left)
+		}
+	}
 	let changed = true
-
 	while (changed) {
 		changed = false
 		for (const rule of grammar.rules) {
@@ -62,7 +69,6 @@ function getProductive(grammar: Grammar): Set<string> {
 			}
 		}
 	}
-
 	return productive
 }
 
@@ -86,6 +92,31 @@ function getReachable(grammar: Grammar): Set<string> {
 	}
 
 	return reachable
+}
+
+function eliminateUnreachableSymbols(grammar: Grammar): Grammar {
+	const reachable = getReachable(grammar)
+	const rules = grammar.rules.filter(r =>
+		reachable.has(r.left) && r.right.every(s =>
+			grammar.terminals.includes(s) || reachable.has(s),
+		),
+	)
+	const nonterminals = grammar.nonterminals.filter(nt => reachable.has(nt))
+	const usedTerminals = new Set<string>()
+	for (const rule of rules) {
+		for (const s of rule.right) {
+			if (grammar.terminals.includes(s)) {
+				usedTerminals.add(s)
+			}
+		}
+	}
+	const terminals = grammar.terminals.filter(t => usedTerminals.has(t))
+	return {
+		nonterminals,
+		terminals,
+		rules,
+		startSymbol: grammar.startSymbol,
+	}
 }
 
 function eliminateUselessSymbols(grammar: Grammar): Grammar {
@@ -129,7 +160,7 @@ function eliminateUselessSymbols(grammar: Grammar): Grammar {
 }
 
 function toBinaryRules(grammar: Grammar): Grammar {
-	let rules: GrammarRule[] = []
+	const rules: GrammarRule[] = []
 	const nonterminals = [...grammar.nonterminals]
 	const terminals = [...grammar.terminals]
 	let nextId = 0
@@ -138,7 +169,10 @@ function toBinaryRules(grammar: Grammar): Grammar {
 		const name = `_T${t}`
 		if (!nonterminals.includes(name)) {
 			nonterminals.push(name)
-			rules.push({left: name, right: [t]})
+			rules.push({
+				left: name,
+				right: [t],
+			})
 		}
 		return name
 	}
@@ -161,15 +195,23 @@ function toBinaryRules(grammar: Grammar): Grammar {
 			continue
 		}
 		const right = rule.right.map(s =>
-			grammar.terminals.includes(s) ? ensureTerminalNonterminal(s) : s,
+			grammar.terminals.includes(s)
+				? ensureTerminalNonterminal(s)
+				: s,
 		)
 		let left = rule.left
 		for (let i = 0; i < right.length - 2; i++) {
 			const newNt = freshNonterminal()
-			rules.push({left, right: [right[i], newNt]})
+			rules.push({
+				left,
+				right: [right[i], newNt],
+			})
 			left = newNt
 		}
-		rules.push({left, right: [right[right.length - 2], right[right.length - 1]]})
+		rules.push({
+			left,
+			right: [right[right.length - 2], right[right.length - 1]],
+		})
 	}
 
 	return {
@@ -180,9 +222,24 @@ function toBinaryRules(grammar: Grammar): Grammar {
 	}
 }
 
+function eliminateUselessAndCyclic(grammar: Grammar): Grammar {
+	let g = eliminateUselessSymbols(grammar)
+	g = eliminateUnitRules(g)
+	return g
+}
+
+function eliminateUnreachableAndCyclic(grammar: Grammar): Grammar {
+	let g = eliminateUnreachableSymbols(grammar)
+	g = eliminateUnitRules(g)
+	return g
+}
+
 function toChomskyNormalForm(grammar: Grammar): Grammar {
 	let g = eliminateEpsilonRules(grammar)
-	g = {...g, rules: g.rules.filter(r => r.right.length > 0)}
+	g = {
+		...g,
+		rules: g.rules.filter(r => r.right.length > 0),
+	}
 	g = eliminateUnitRules(g)
 	g = eliminateUselessSymbols(g)
 	g = toBinaryRules(g)
@@ -191,9 +248,12 @@ function toChomskyNormalForm(grammar: Grammar): Grammar {
 }
 
 export {
-	toChomskyNormalForm,
+	eliminateUnreachableAndCyclic,
+	eliminateUnreachableSymbols,
+	eliminateUselessAndCyclic,
 	eliminateUnitRules,
 	eliminateUselessSymbols,
 	getProductive,
 	getReachable,
+	toChomskyNormalForm,
 }
