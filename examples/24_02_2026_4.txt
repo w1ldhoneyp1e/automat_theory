@@ -1,0 +1,2 @@
+S -> S; i=E | i=E
+E -> E*i | E+i | i-(E) | i

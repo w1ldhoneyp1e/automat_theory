@@ -1,0 +1,8 @@
+P -> AB
+P -> BG
+A -> aA
+A -> e
+B -> c
+B -> bB
+G -> c
+G -> bA

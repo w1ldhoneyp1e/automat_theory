@@ -1,0 +1,3 @@
+S -> AAA | B
+A -> aA | B
+B -> e

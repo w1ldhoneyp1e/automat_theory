@@ -1,19 +1,6 @@
-digraph Grammar_DFA {
-  rankdir=LR;
-  node [shape=circle];
-  q0 [shape=doublecircle];
-  q1 [shape=circle];
-  q2 [shape=circle];
-  q3 [shape=circle];
-  q4 [shape=circle];
-  start [shape=point];
-  start -> q0;
-  q0 -> q1 [label="a"];
-  q0 -> q2 [label="b"];
-  q1 -> q1 [label="a"];
-  q1 -> q3 [label="c"];
-  q2 -> q2 [label="b"];
-  q2 -> q4 [label="d"];
-  q3 -> q3 [label="c"];
-  q4 -> q4 [label="d"];
-}
+Грамматика (КНФ): 20 правил
+Строка: "ab"
+Принадлежность: нет
+Таблица CYK:
+  [0,1) "a" -> _Ta, S, A
+  [1,2) "b" -> _Tb, S, B

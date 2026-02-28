@@ -1,0 +1,2 @@
+<idList> -> id <idList> | i <A> | i | <A>
+<A> -> ,<idList> | e
