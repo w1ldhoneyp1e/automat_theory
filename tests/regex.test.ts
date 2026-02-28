@@ -1,5 +1,5 @@
-import {parseRegex} from '../src/regexParser'
-import {nfaToDot, regexToNFA} from '../src/regexToNfa'
+import {parseRegex} from '../src/regex/parser'
+import {nfaToDot, regexToNFA} from '../src/regex/to-nfa'
 
 describe('Regex Parser', () => {
 	it('должен парсить простые символы', () => {

@@ -1,4 +1,4 @@
-import {type ParseNode, parseRegex} from './regexParser'
+import {type ParseNode, parseRegex} from './parser'
 
 interface NFATransition {
 	from: string,

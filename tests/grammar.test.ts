@@ -1,5 +1,5 @@
-import {parseGrammar} from '../src/grammarParser'
-import {dfaToDot, grammarToDFA} from '../src/grammarToDfa'
+import {dfaToDot, grammarToDFA} from '../src/automata/grammar-to-dfa'
+import {parseGrammar} from '../src/grammar/parser'
 
 describe('Grammar Parser', () => {
 	test('должен парсить простую грамматику', () => {

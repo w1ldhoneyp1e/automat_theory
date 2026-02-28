@@ -1,4 +1,4 @@
-import {determinizeMealy, isMealyDeterministic} from '../src/determinizer'
+import {determinizeMealy, isMealyDeterministic} from '../src/automata/determinizer'
 import {type MealyMachine} from '../src/types'
 
 describe('Determinizer', () => {

@@ -1,7 +1,7 @@
-import {parseGrammar} from '../src/grammarParser'
-import {eliminateEpsilonRules} from '../src/epsilonElimination'
-import {toChomskyNormalForm} from '../src/chomskyNormalForm'
-import {cyk} from '../src/cyk'
+import {cyk} from '../src/grammar/cyk'
+import {eliminateEpsilonRules} from '../src/grammar/epsilon'
+import {toChomskyNormalForm} from '../src/grammar/normalization'
+import {parseGrammar} from '../src/grammar/parser'
 
 describe('Устранение пустых правил', () => {
 	test('убирает ε-правила и добавляет варианты', () => {
@@ -43,7 +43,8 @@ describe('Нормальная форма Хомского', () => {
 			expect(r.right.length).toBeGreaterThan(0)
 			if (r.right.length === 1) {
 				expect(cnf.terminals).toContain(r.right[0])
-			} else {
+			}
+			else {
 				expect(r.right.length).toBe(2)
 				expect(cnf.nonterminals).toContain(r.right[0])
 				expect(cnf.nonterminals).toContain(r.right[1])

@@ -1,7 +1,7 @@
-import {eliminateEpsilonRules} from './epsilonElimination'
-import {type Grammar, type GrammarRule} from './types'
+import {type Grammar, type GrammarRule} from '../types'
+import {eliminateEpsilonRules} from './epsilon'
 
-function eliminateUnitRules(grammar: Grammar): Grammar {
+function buildDerivedByMap(grammar: Grammar): Map<string, Set<string>> {
 	const derivedBy = new Map<string, Set<string>>()
 	for (const nt of grammar.nonterminals) {
 		derivedBy.set(nt, new Set([nt]))
@@ -11,19 +11,26 @@ function eliminateUnitRules(grammar: Grammar): Grammar {
 	while (changed) {
 		changed = false
 		for (const rule of grammar.rules) {
-			if (rule.right.length === 1 && grammar.nonterminals.includes(rule.right[0])) {
-				const a = rule.left
-				const b = rule.right[0]
-				const setB = derivedBy.get(b)!
-				for (const c of derivedBy.get(a)!) {
-					if (!setB.has(c)) {
-						setB.add(c)
-						changed = true
-					}
+			if (rule.right.length !== 1 || !grammar.nonterminals.includes(rule.right[0])) {
+				continue
+			}
+			const a = rule.left
+			const b = rule.right[0]
+			const setB = derivedBy.get(b)!
+			for (const c of derivedBy.get(a)!) {
+				if (!setB.has(c)) {
+					setB.add(c)
+					changed = true
 				}
 			}
 		}
 	}
+
+	return derivedBy
+}
+
+function eliminateUnitRules(grammar: Grammar): Grammar {
+	const derivedBy = buildDerivedByMap(grammar)
 
 	const newRules: GrammarRule[] = []
 	for (const rule of grammar.rules) {
@@ -48,27 +55,30 @@ function eliminateUnitRules(grammar: Grammar): Grammar {
 
 function getProductive(grammar: Grammar): Set<string> {
 	const productive = new Set<string>()
+
 	for (const rule of grammar.rules) {
 		if (rule.right.length === 0) {
 			productive.add(rule.left)
 		}
 	}
+
 	let changed = true
 	while (changed) {
 		changed = false
 		for (const rule of grammar.rules) {
-			if (rule.right.length === 0) {
+			if (rule.right.length === 0 || productive.has(rule.left)) {
 				continue
 			}
-			const allProd = rule.right.every(s =>
-				grammar.terminals.includes(s) || productive.has(s),
+			const allProd = rule.right.every(
+				s => grammar.terminals.includes(s) || productive.has(s),
 			)
-			if (allProd && !productive.has(rule.left)) {
+			if (allProd) {
 				productive.add(rule.left)
 				changed = true
 			}
 		}
 	}
+
 	return productive
 }
 
@@ -94,26 +104,28 @@ function getReachable(grammar: Grammar): Set<string> {
 	return reachable
 }
 
-function eliminateUnreachableSymbols(grammar: Grammar): Grammar {
-	const reachable = getReachable(grammar)
-	const rules = grammar.rules.filter(r =>
-		reachable.has(r.left) && r.right.every(s =>
-			grammar.terminals.includes(s) || reachable.has(s),
-		),
-	)
-	const nonterminals = grammar.nonterminals.filter(nt => reachable.has(nt))
-	const usedTerminals = new Set<string>()
+function collectUsedTerminals(grammar: Grammar, rules: GrammarRule[]): string[] {
+	const used = new Set<string>()
 	for (const rule of rules) {
 		for (const s of rule.right) {
 			if (grammar.terminals.includes(s)) {
-				usedTerminals.add(s)
+				used.add(s)
 			}
 		}
 	}
-	const terminals = grammar.terminals.filter(t => usedTerminals.has(t))
+	return grammar.terminals.filter(t => used.has(t))
+}
+
+function eliminateUnreachableSymbols(grammar: Grammar): Grammar {
+	const reachable = getReachable(grammar)
+	const rules = grammar.rules.filter(
+		r => reachable.has(r.left) && r.right.every(
+			s => grammar.terminals.includes(s) || reachable.has(s),
+		),
+	)
 	return {
-		nonterminals,
-		terminals,
+		nonterminals: grammar.nonterminals.filter(nt => reachable.has(nt)),
+		terminals: collectUsedTerminals(grammar, rules),
 		rules,
 		startSymbol: grammar.startSymbol,
 	}
@@ -121,40 +133,28 @@ function eliminateUnreachableSymbols(grammar: Grammar): Grammar {
 
 function eliminateUselessSymbols(grammar: Grammar): Grammar {
 	const productive = getProductive(grammar)
-	const usefulRules = grammar.rules.filter(rule => {
-		if (rule.right.length === 0) {
-			return false
-		}
-		return rule.right.every(s =>
-			grammar.terminals.includes(s) || productive.has(s),
-		) && productive.has(rule.left)
-	})
+
+	const usefulRules = grammar.rules.filter(
+		rule => rule.right.length > 0
+			&& productive.has(rule.left)
+			&& rule.right.every(s => grammar.terminals.includes(s) || productive.has(s)),
+	)
 
 	const reachable = getReachable({
 		...grammar,
 		rules: usefulRules,
 	})
-	const usefulRules2 = usefulRules.filter(r =>
-		reachable.has(r.left) && r.right.every(s =>
-			grammar.terminals.includes(s) || reachable.has(s),
+
+	const rules = usefulRules.filter(
+		r => reachable.has(r.left) && r.right.every(
+			s => grammar.terminals.includes(s) || reachable.has(s),
 		),
 	)
 
-	const nonterminals = grammar.nonterminals.filter(nt => reachable.has(nt) && productive.has(nt))
-	const usedTerminals = new Set<string>()
-	for (const rule of usefulRules2) {
-		for (const s of rule.right) {
-			if (grammar.terminals.includes(s)) {
-				usedTerminals.add(s)
-			}
-		}
-	}
-	const terminals = grammar.terminals.filter(t => usedTerminals.has(t))
-
 	return {
-		nonterminals,
-		terminals,
-		rules: usefulRules2,
+		nonterminals: grammar.nonterminals.filter(nt => reachable.has(nt) && productive.has(nt)),
+		terminals: collectUsedTerminals(grammar, rules),
+		rules,
 		startSymbol: grammar.startSymbol,
 	}
 }
@@ -165,7 +165,7 @@ function toBinaryRules(grammar: Grammar): Grammar {
 	const terminals = [...grammar.terminals]
 	let nextId = 0
 
-	function ensureTerminalNonterminal(t: string): string {
+	function ensureTerminalProxy(t: string): string {
 		const name = `_T${t}`
 		if (!nonterminals.includes(name)) {
 			nonterminals.push(name)
@@ -177,7 +177,7 @@ function toBinaryRules(grammar: Grammar): Grammar {
 		return name
 	}
 
-	function freshNonterminal(): string {
+	function freshNt(): string {
 		let name: string
 		do {
 			name = `_N${nextId++}`
@@ -194,14 +194,14 @@ function toBinaryRules(grammar: Grammar): Grammar {
 			rules.push(rule)
 			continue
 		}
-		const right = rule.right.map(s =>
-			grammar.terminals.includes(s)
-				? ensureTerminalNonterminal(s)
+		const right = rule.right.map(
+			s => grammar.terminals.includes(s)
+				? ensureTerminalProxy(s)
 				: s,
 		)
 		let left = rule.left
 		for (let i = 0; i < right.length - 2; i++) {
-			const newNt = freshNonterminal()
+			const newNt = freshNt()
 			rules.push({
 				left,
 				right: [right[i], newNt],
@@ -222,18 +222,6 @@ function toBinaryRules(grammar: Grammar): Grammar {
 	}
 }
 
-function eliminateUselessAndCyclic(grammar: Grammar): Grammar {
-	let g = eliminateUselessSymbols(grammar)
-	g = eliminateUnitRules(g)
-	return g
-}
-
-function eliminateUnreachableAndCyclic(grammar: Grammar): Grammar {
-	let g = eliminateUnreachableSymbols(grammar)
-	g = eliminateUnitRules(g)
-	return g
-}
-
 function toChomskyNormalForm(grammar: Grammar): Grammar {
 	let g = eliminateEpsilonRules(grammar)
 	g = {
@@ -243,14 +231,11 @@ function toChomskyNormalForm(grammar: Grammar): Grammar {
 	g = eliminateUnitRules(g)
 	g = eliminateUselessSymbols(g)
 	g = toBinaryRules(g)
-
 	return g
 }
 
 export {
-	eliminateUnreachableAndCyclic,
 	eliminateUnreachableSymbols,
-	eliminateUselessAndCyclic,
 	eliminateUnitRules,
 	eliminateUselessSymbols,
 	getProductive,

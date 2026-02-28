@@ -1,4 +1,4 @@
-import {type MealyMachine, type MooreMachine} from './types'
+import {type MealyMachine, type MooreMachine} from '../types'
 
 function generateMealyDot(machine: MealyMachine): string {
 	let dot = 'digraph MealyMachine {\n'

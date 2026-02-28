@@ -2,7 +2,7 @@ import {
 	type DotEdge,
 	type DotGraph,
 	type DotNode,
-} from './types'
+} from '../types'
 
 function parse(dotContent: string): DotGraph {
 	const lines = dotContent.split('\n').map(line => line.trim())

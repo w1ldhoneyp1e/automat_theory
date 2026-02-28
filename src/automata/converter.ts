@@ -5,7 +5,7 @@ import {
 	type MooreMachine,
 	type MooreState,
 	type MooreTransition,
-} from './types'
+} from '../types'
 
 function parseMealyFromDot(dotGraph: DotGraph): MealyMachine {
 	const states = dotGraph.nodes.map(node => node.id)

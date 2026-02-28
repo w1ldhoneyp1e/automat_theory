@@ -1,25 +1,9 @@
-import {
-	type MooreMachine,
-	type MooreState,
-	type MooreTransition,
-} from '../types'
+import {type MealyMachine, type MealyTransition} from '../../types'
 import {createStateMapping} from './utils'
-
-function groupStatesByOutput(states: MooreState[]): string[][] {
-	const outputGroups = new Map<string, string[]>()
-	states.forEach(state => {
-		const output = state.output
-		if (!outputGroups.has(output)) {
-			outputGroups.set(output, [])
-		}
-		outputGroups.get(output)!.push(state.name)
-	})
-	return Array.from(outputGroups.values())
-}
 
 function getTransitionSignature(
 	stateName: string,
-	transitions: MooreTransition[],
+	transitions: MealyTransition[],
 	partitions: string[][],
 ): string {
 	const stateTransitions = transitions.filter(t => t.from === stateName)
@@ -28,14 +12,14 @@ function getTransitionSignature(
 		.sort((a, b) => a.input.localeCompare(b.input))
 		.map(t => {
 			const targetPartitionIndex = partitions.findIndex(p => p.includes(t.to))
-			return `${t.input}:${targetPartitionIndex}`
+			return `${t.input}:${targetPartitionIndex}:${t.output}`
 		})
 		.join('|')
 }
 
 function splitPartitionByTransitions(
 	partition: string[],
-	transitions: MooreTransition[],
+	transitions: MealyTransition[],
 	partitions: string[][],
 ): string[][] {
 	if (partition.length === 1) {
@@ -56,13 +40,15 @@ function splitPartitionByTransitions(
 	return Array.from(transitionGroups.values())
 }
 
+interface RefinePartitionsResults {
+	partitions: string[][],
+	changed: boolean,
+}
+
 function refinePartitions(
 	partitions: string[][],
-	transitions: MooreTransition[],
-): {
-		partitions: string[][],
-		changed: boolean,
-	} {
+	transitions: MealyTransition[],
+): RefinePartitionsResults {
 	const newPartitions: string[][] = []
 	let changed = false
 
@@ -83,19 +69,16 @@ function refinePartitions(
 }
 
 function buildMinimizedStates(
-	states: MooreState[],
+	states: string[],
 	stateMapping: Map<string, string>,
-): MooreState[] {
-	const minimizedStates: MooreState[] = []
+): string[] {
+	const minimizedStates: string[] = []
 	const addedStates = new Set<string>()
 
 	states.forEach(state => {
-		const newStateName = stateMapping.get(state.name)!
+		const newStateName = stateMapping.get(state)!
 		if (!addedStates.has(newStateName)) {
-			minimizedStates.push({
-				name: newStateName,
-				output: state.output,
-			})
+			minimizedStates.push(newStateName)
 			addedStates.add(newStateName)
 		}
 	})
@@ -104,22 +87,23 @@ function buildMinimizedStates(
 }
 
 function buildMinimizedTransitions(
-	transitions: MooreTransition[],
+	transitions: MealyTransition[],
 	stateMapping: Map<string, string>,
-): MooreTransition[] {
-	const minimizedTransitions: MooreTransition[] = []
+): MealyTransition[] {
+	const minimizedTransitions: MealyTransition[] = []
 	const addedTransitions = new Set<string>()
 
 	transitions.forEach(transition => {
 		const newFrom = stateMapping.get(transition.from)!
 		const newTo = stateMapping.get(transition.to)!
-		const transitionKey = `${newFrom}-${transition.input}-${newTo}`
+		const transitionKey = `${newFrom}-${transition.input}-${newTo}-${transition.output}`
 
 		if (!addedTransitions.has(transitionKey)) {
 			minimizedTransitions.push({
 				from: newFrom,
 				to: newTo,
 				input: transition.input,
+				output: transition.output,
 			})
 			addedTransitions.add(transitionKey)
 		}
@@ -128,10 +112,10 @@ function buildMinimizedTransitions(
 	return minimizedTransitions
 }
 
-function minimizeMoore(machine: MooreMachine): MooreMachine {
+function minimizeMealy(machine: MealyMachine): MealyMachine {
 	const {states, transitions} = machine
 
-	let partitions = groupStatesByOutput(states)
+	let partitions: string[][] = [states]
 	let changed = true
 
 	while (changed) {
@@ -151,6 +135,6 @@ function minimizeMoore(machine: MooreMachine): MooreMachine {
 }
 
 export {
-	minimizeMoore,
+	minimizeMealy,
 }
 

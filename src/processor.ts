@@ -1,23 +1,24 @@
-import {
-	eliminateUnreachableSymbols,
-	getReachable,
-	toChomskyNormalForm,
-} from './chomskyNormalForm'
-import {mealyToMoore, mooreToMealy} from './converter'
-import {cyk} from './cyk'
+import {mealyToMoore, mooreToMealy} from './automata/converter'
 import {
 	determinizeMealy,
 	determinizeNFA,
 	dfaToDot,
 	isMealyDeterministic,
-} from './determinizer'
-import {minimizeDFA} from './dfaMinimizer'
-import {generateMealyDot, generateMooreDot} from './generator'
-import {parseGrammar} from './grammarParser'
-import {dfaToDot as grammarDfaToDot, grammarToDFA} from './grammarToDfa'
-import {minimizeMealy} from './minimizer/mealy'
-import {minimizeMoore} from './minimizer/moore'
-import {nfaToDot, regexToNFA} from './regexToNfa'
+} from './automata/determinizer'
+import {minimizeDFA} from './automata/dfa-minimizer'
+import {generateMealyDot, generateMooreDot} from './automata/generator'
+import {dfaToDot as grammarDfaToDot, grammarToDFA} from './automata/grammar-to-dfa'
+import {minimizeMealy} from './automata/minimizer/mealy'
+import {minimizeMoore} from './automata/minimizer/moore'
+import {detectMachineType, parse} from './dot/parser'
+import {cyk} from './grammar/cyk'
+import {
+	eliminateUnreachableSymbols,
+	getReachable,
+	toChomskyNormalForm,
+} from './grammar/normalization'
+import {parseGrammar} from './grammar/parser'
+import {nfaToDot, regexToNFA} from './regex/to-nfa'
 import {
 	type DotGraph,
 	type Grammar,
@@ -29,28 +30,10 @@ function processAsIs(inputContent: string): string {
 	return inputContent
 }
 
-function processMealyConversion(dotGraph: DotGraph): string {
-	const mooreMachine = mealyToMoore(dotGraph)
-	return generateMooreDot(mooreMachine)
-}
-
-function processMooreConversion(dotGraph: DotGraph): string {
-	const mealyMachine = mooreToMealy(dotGraph)
-	return generateMealyDot(mealyMachine)
-}
-
-function processConversion(dotGraph: DotGraph, machineType: 'mealy' | 'moore'): string {
-	if (machineType === 'mealy') {
-		return processMealyConversion(dotGraph)
-	}
-
-	return processMooreConversion(dotGraph)
-}
-
 function parseMealyFromDot(dotGraph: DotGraph): MealyMachine {
 	const states = dotGraph.nodes.map(node => node.id)
 	const transitions = dotGraph.edges
-		.filter(edge => edge.label && edge.label.includes('/'))
+		.filter(edge => edge.label?.includes('/'))
 		.map(edge => {
 			const [input, output] = edge.label!.split('/')
 			return {
@@ -60,7 +43,6 @@ function parseMealyFromDot(dotGraph: DotGraph): MealyMachine {
 				output: output.trim(),
 			}
 		})
-
 	return {
 		states,
 		transitions,
@@ -68,100 +50,80 @@ function parseMealyFromDot(dotGraph: DotGraph): MealyMachine {
 }
 
 function parseMooreFromDot(dotGraph: DotGraph): MooreMachine {
-	const states = dotGraph.nodes
-		.map(node => {
-			if (node.label && node.label.includes('/')) {
-				const [stateName, output] = node.label.split('/')
-				return {
-					name: stateName.trim(),
-					output: output.trim(),
-				}
-			}
+	const states = dotGraph.nodes.map(node => {
+		if (node.label?.includes('/')) {
+			const [stateName, output] = node.label.split('/')
 			return {
-				name: node.id,
-				output: '',
+				name: stateName.trim(),
+				output: output.trim(),
 			}
-		})
-
+		}
+		return {
+			name: node.id,
+			output: '',
+		}
+	})
 	const transitions = dotGraph.edges.map(edge => ({
 		from: edge.from,
 		to: edge.to,
-		input: edge.label || '',
+		input: edge.label ?? '',
 	}))
-
 	return {
 		states,
 		transitions,
 	}
 }
 
-function processMealyMinimization(dotGraph: DotGraph): string {
-	const mealyMachine = parseMealyFromDot(dotGraph)
-	const minimizedMachine = minimizeMealy(mealyMachine)
-	return generateMealyDot(minimizedMachine)
-}
-
-function processMooreMinimization(dotGraph: DotGraph): string {
-	const mooreMachine = parseMooreFromDot(dotGraph)
-	const minimizedMachine = minimizeMoore(mooreMachine)
-	return generateMooreDot(minimizedMachine)
+function processConversion(dotGraph: DotGraph, machineType: 'mealy' | 'moore'): string {
+	if (machineType === 'mealy') {
+		return generateMooreDot(mealyToMoore(dotGraph))
+	}
+	return generateMealyDot(mooreToMealy(dotGraph))
 }
 
 function processMinimization(dotGraph: DotGraph, machineType: 'mealy' | 'moore'): string {
 	if (machineType === 'mealy') {
-		return processMealyMinimization(dotGraph)
+		return generateMealyDot(minimizeMealy(parseMealyFromDot(dotGraph)))
 	}
-	return processMooreMinimization(dotGraph)
-}
-
-function processMealyDeterminization(dotGraph: DotGraph): string {
-	const mealyMachine = parseMealyFromDot(dotGraph)
-	const determinizedMachine = determinizeMealy(mealyMachine)
-
-	if (isMealyDeterministic(mealyMachine)) {
-		console.log('Автомат уже является детерминированным')
-	}
-
-	return generateMealyDot(determinizedMachine)
+	return generateMooreDot(minimizeMoore(parseMooreFromDot(dotGraph)))
 }
 
 function processDeterminization(dotGraph: DotGraph, machineType: 'mealy' | 'moore'): string {
 	if (machineType === 'mealy') {
-		return processMealyDeterminization(dotGraph)
+		const machine = parseMealyFromDot(dotGraph)
+		if (isMealyDeterministic(machine)) {
+			console.log('Автомат уже является детерминированным')
+		}
+		return generateMealyDot(determinizeMealy(machine))
 	}
 
 	const mealyMachine = mooreToMealy(dotGraph)
-
 	if (isMealyDeterministic(mealyMachine)) {
 		console.log('Автомат уже является детерминированным')
 		return generateMealyDot(mealyMachine)
 	}
-
-	const determinizedMealy = determinizeMealy(mealyMachine)
-	return generateMealyDot(determinizedMealy)
+	return generateMealyDot(determinizeMealy(mealyMachine))
 }
 
 function processGrammarToDFA(grammarText: string): string {
-	const grammar = parseGrammar(grammarText)
-	const dfa = grammarToDFA(grammar)
-	return grammarDfaToDot(dfa)
+	return grammarDfaToDot(grammarToDFA(parseGrammar(grammarText)))
 }
 
 function processRegexToNFA(regexText: string, shouldMinimize: boolean = false): string {
-	const regex = regexText.trim()
-	const nfa = regexToNFA(regex)
-
+	const nfa = regexToNFA(regexText.trim())
 	if (shouldMinimize) {
-		const dfa = determinizeNFA(nfa)
-		const minimizedDfa = minimizeDFA(dfa)
-		return dfaToDot(minimizedDfa)
+		return dfaToDot(minimizeDFA(determinizeNFA(nfa)))
 	}
-
 	return nfaToDot(nfa)
 }
 
 function isInternalNonterminal(nt: string): boolean {
 	return nt.startsWith('_T') || nt.startsWith('_N')
+}
+
+function centerStr(s: string, width: number): string {
+	const pad = Math.max(0, width - s.length)
+	return ' '.repeat(Math.floor(pad / 2)) + s + ' '.repeat(Math.ceil(pad / 2))
 }
 
 function formatCykTable(w: string, table: string[][][], startSymbol: string): string {
@@ -190,31 +152,22 @@ function formatCykTable(w: string, table: string[][][], startSymbol: string): st
 	const cellW = maxW + 4
 	const lW = String(n).length + 1
 
-	const center = (s: string, width: number): string => {
-		const pad = Math.max(0, width - s.length)
-		return ' '.repeat(Math.floor(pad / 2)) + s + ' '.repeat(Math.ceil(pad / 2))
-	}
-
 	const makeSep = (type: 'top' | 'mid' | 'bot'): string => {
-		let l: string, m: string, r: string
-		if (type === 'top') {
-			l = '┌'; m = '┬'; r = '┐'
+		const chars = {
+			top: ['┌', '┬', '┐'],
+			mid: ['├', '┼', '┤'],
+			bot: ['└', '┴', '┘'],
 		}
-		else if (type === 'bot') {
-			l = '└'; m = '┴'; r = '┘'
-		}
-		else {
-			l = '├'; m = '┼'; r = '┤'
-		}
-		return ' '.repeat(lW) + l + Array(n).fill('─'.repeat(cellW))
-			.join(m) + r
+		const [l, m, r] = chars[type]
+		const cells = Array(n).fill('─'.repeat(cellW))
+			.join(m)
+		return ' '.repeat(lW) + l + cells + r
 	}
 
-	const lines: string[] = []
-	lines.push(makeSep('top'))
+	const lines: string[] = [makeSep('top')]
 
 	for (let len = n; len >= 1; len--) {
-		let row = center(String(len), lW - 1) + ' │'
+		let row = centerStr(String(len), lW - 1) + ' │'
 		for (let i = 0; i < n; i++) {
 			const cell = getCell(i, len)
 			if (cell === null) {
@@ -222,8 +175,8 @@ function formatCykTable(w: string, table: string[][][], startSymbol: string): st
 			}
 			else {
 				const isTop = len === n && i === 0 && cell !== '—' && cell.split(',').includes(startSymbol)
-				row += center(isTop
-					? cell + ' ✓'
+				row += centerStr(isTop
+					? `${cell} ✓`
 					: cell, cellW) + '│'
 			}
 		}
@@ -237,7 +190,7 @@ function formatCykTable(w: string, table: string[][][], startSymbol: string): st
 
 	let charRow = ' '.repeat(lW)
 	for (let i = 0; i < n; i++) {
-		charRow += ' ' + center(w[i], cellW)
+		charRow += ' ' + centerStr(w[i], cellW)
 	}
 	lines.push(charRow)
 
@@ -245,52 +198,40 @@ function formatCykTable(w: string, table: string[][][], startSymbol: string): st
 }
 
 function grammarToText(grammar: Grammar): string {
-	function fmtSym(s: string): string {
-		if (grammar.nonterminals.includes(s)) {
-			return s.length === 1 && s >= 'A' && s <= 'Z'
-				? s
-				: `<${s}>`
-		}
+	function fmt(s: string): string {
 		return s.length === 1
 			? s
 			: `<${s}>`
 	}
-	function fmtLeft(s: string): string {
-		return s.length === 1 && s >= 'A' && s <= 'Z'
-			? s
-			: `<${s}>`
-	}
+
 	const byLeft = new Map<string, string[][]>()
 	for (const r of grammar.rules) {
-		const key = r.left
-		if (!byLeft.has(key)) {
-			byLeft.set(key, [])
+		if (!byLeft.has(r.left)) {
+			byLeft.set(r.left, [])
 		}
-		byLeft.get(key)!.push(r.right.length === 0
+		byLeft.get(r.left)!.push(r.right.length === 0
 			? []
-			: r.right.map(fmtSym))
+			: r.right.map(fmt))
 	}
-	const lines: string[] = []
-	for (const left of grammar.nonterminals) {
-		const rights = byLeft.get(left)
-		if (!rights || rights.length === 0) {
-			continue
-		}
-		const alts = rights.map(r => r.length === 0
-			? 'e'
-			: r.join('')).join(' | ')
-		lines.push(`${fmtLeft(left)} -> ${alts}`)
-	}
-	return lines.join('\n')
+
+	return grammar.nonterminals
+		.filter(left => byLeft.has(left) && byLeft.get(left)!.length > 0)
+		.map(left => {
+			const alts = byLeft.get(left)!.map(r => r.length === 0
+				? 'e'
+				: r.join('')).join(' | ')
+			return `${fmt(left)} -> ${alts}`
+		})
+		.join('\n')
 }
 
-function processGrammarNormalize(grammarText: string, verbose: boolean = true): string {
+function processGrammarNormalize(grammarText: string): string {
 	const grammar = parseGrammar(grammarText)
 	const reachable = getReachable(grammar)
 	const unreachable = grammar.nonterminals.filter(nt => !reachable.has(nt))
 	const cleaned = eliminateUnreachableSymbols(grammar)
 	const lines: string[] = []
-	if (verbose && unreachable.length > 0) {
+	if (unreachable.length > 0) {
 		lines.push(`Удалены недостижимые: ${unreachable.join(', ')}`)
 		lines.push('')
 	}
@@ -312,12 +253,14 @@ function processGrammarCYK(grammarText: string, word: string): string {
 }
 
 export {
+	parse,
+	detectMachineType,
 	processAsIs,
 	processConversion,
 	processDeterminization,
-	processGrammarToDFA,
 	processGrammarCYK,
 	processGrammarNormalize,
+	processGrammarToDFA,
 	processMinimization,
 	processRegexToNFA,
 }

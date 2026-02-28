@@ -3,7 +3,7 @@ import {
 	type GrammarRule,
 	type MealyMachine,
 	type MealyTransition,
-} from './types'
+} from '../types'
 
 function grammarToDFA(grammar: Grammar): MealyMachine {
 	validateRegularGrammar(grammar)

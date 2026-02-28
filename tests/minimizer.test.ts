@@ -1,5 +1,5 @@
-import {minimizeMealy} from '../src/minimizer/mealy'
-import {minimizeMoore} from '../src/minimizer/moore'
+import {minimizeMealy} from '../src/automata/minimizer/mealy'
+import {minimizeMoore} from '../src/automata/minimizer/moore'
 import {type MealyMachine, type MooreMachine} from '../src/types'
 
 describe('minimize', () => {

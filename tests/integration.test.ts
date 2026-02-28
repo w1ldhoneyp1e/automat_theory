@@ -1,6 +1,6 @@
-import {mealyToMoore, mooreToMealy} from '../src/converter'
-import {generateMealyDot, generateMooreDot} from '../src/generator'
-import {detectMachineType, parse} from '../src/parser'
+import {mealyToMoore, mooreToMealy} from '../src/automata/converter'
+import {generateMealyDot, generateMooreDot} from '../src/automata/generator'
+import {detectMachineType, parse} from '../src/dot/parser'
 
 describe('Интеграционные тесты', () => {
 	it('должен корректно конвертировать автомат Мили в автомат Мура', () => {

@@ -1,4 +1,4 @@
-import {type Grammar, type GrammarRule} from './types'
+import {type Grammar, type GrammarRule} from '../types'
 
 function parseLeft(leftRaw: string): string {
 	const t = leftRaw.trim()
@@ -16,7 +16,9 @@ function tokenizeAlternative(alt: string): string[] {
 		while (i < s.length && /\s/.test(s[i])) {
 			i++
 		}
-		if (i >= s.length) break
+		if (i >= s.length) {
+			break
+		}
 		if (s[i] === '<') {
 			const end = s.indexOf('>', i)
 			if (end === -1) {
@@ -87,8 +89,6 @@ function parseGrammar(grammarText: string): Grammar {
 		}
 	}
 
-	const startSymbol = rules[0].left
-
 	if (terminals.length === 0) {
 		throw new Error('Не найдены терминальные символы')
 	}
@@ -97,7 +97,7 @@ function parseGrammar(grammarText: string): Grammar {
 		nonterminals,
 		terminals,
 		rules,
-		startSymbol,
+		startSymbol: rules[0].left,
 	}
 }
 

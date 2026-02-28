@@ -1,5 +1,5 @@
-import {type NFA, type NFATransition} from './regexToNfa'
-import {type MealyMachine, type MealyTransition} from './types'
+import {type NFA, type NFATransition} from '../regex/to-nfa'
+import {type MealyMachine, type MealyTransition} from '../types'
 
 function stateSetToString(stateSet: Set<string>): string {
 	const sortedStates = Array.from(stateSet).sort()
