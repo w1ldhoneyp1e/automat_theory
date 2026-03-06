@@ -1,0 +1,3 @@
+<S> -> "if " <A> " then " <S> | "if " <A> " then " <S> " else " <S> | <B>
+<A> -> <A> "+" <A> | "id"
+<B> -> "id" "=" <A> | e

@@ -8,9 +8,14 @@ function parseLeft(leftRaw: string): string {
 	return t
 }
 
-function tokenizeAlternative(alt: string): string[] {
+interface ParsedToken {
+	text: string,
+	isQuotedTerminal: boolean,
+}
+
+function tokenizeAlternative(alt: string): ParsedToken[] {
 	const s = alt.trim()
-	const tokens: string[] = []
+	const tokens: ParsedToken[] = []
 	let i = 0
 	while (i < s.length) {
 		while (i < s.length && /\s/.test(s[i])) {
@@ -19,20 +24,67 @@ function tokenizeAlternative(alt: string): string[] {
 		if (i >= s.length) {
 			break
 		}
-		if (s[i] === '<') {
+		if (s[i] === '"') {
+			const end = s.indexOf('"', i + 1)
+			if (end === -1) {
+				throw new Error(`Не закрыта кавычка в: ${s}`)
+			}
+			tokens.push({
+				text: s.slice(i + 1, end),
+				isQuotedTerminal: true,
+			})
+			i = end + 1
+		}
+		else if (s[i] === '<') {
 			const end = s.indexOf('>', i)
 			if (end === -1) {
 				throw new Error(`Не закрыта угловая скобка в: ${s}`)
 			}
-			tokens.push(s.slice(i + 1, end))
+			tokens.push({
+				text: s.slice(i + 1, end),
+				isQuotedTerminal: false,
+			})
 			i = end + 1
 		}
 		else {
-			tokens.push(s[i])
+			tokens.push({
+				text: s[i],
+				isQuotedTerminal: false,
+			})
 			i++
 		}
 	}
 	return tokens
+}
+
+interface ParseCollector {
+	rules: GrammarRule[],
+	unquotedSymbols: Set<string>,
+	quotedTerminals: Set<string>,
+}
+
+function parseAlternative(left: string, alternative: string, col: ParseCollector): void {
+	if (alternative === 'e' || alternative === '') {
+		col.rules.push({
+			left,
+			right: [],
+		})
+		return
+	}
+	const parsed = tokenizeAlternative(alternative)
+	col.rules.push({
+		left,
+		right: parsed.map(t => t.text),
+	})
+	col.unquotedSymbols.add(left)
+	for (const t of parsed) {
+		if (t.isQuotedTerminal) {
+			col.quotedTerminals.add(t.text)
+		}
+		else {
+			col.unquotedSymbols.add(t.text)
+		}
+	}
 }
 
 function parseGrammar(grammarText: string): Grammar {
@@ -41,51 +93,47 @@ function parseGrammar(grammarText: string): Grammar {
 		.map(line => line.trim())
 		.filter(line => line.length > 0)
 
-	const rules: GrammarRule[] = []
-	const allSymbols = new Set<string>()
+	const col: ParseCollector = {
+		rules: [],
+		unquotedSymbols: new Set<string>(),
+		quotedTerminals: new Set<string>(),
+	}
 	const leftSides = new Set<string>()
 
 	for (const line of lines) {
-		if (line.includes('->')) {
-			const idx = line.indexOf('->')
-			const leftRaw = line.slice(0, idx).trim()
-			const rightPart = line.slice(idx + 2).trim()
-			const left = parseLeft(leftRaw)
-			leftSides.add(left)
-			const alternatives = rightPart.split('|').map(s => s.trim())
-
-			for (const alternative of alternatives) {
-				if (alternative === 'e' || alternative === '') {
-					rules.push({
-						left,
-						right: [],
-					})
-				}
-				else {
-					const symbols = tokenizeAlternative(alternative)
-					rules.push({
-						left,
-						right: symbols,
-					})
-					allSymbols.add(left)
-					symbols.forEach(sym => allSymbols.add(sym))
-				}
-			}
+		if (!line.includes('->')) {
+			continue
+		}
+		const idx = line.indexOf('->')
+		const left = parseLeft(line.slice(0, idx).trim())
+		leftSides.add(left)
+		const alternatives = line.slice(idx + 2).trim()
+			.split('|')
+			.map(s => s.trim())
+		for (const alt of alternatives) {
+			parseAlternative(left, alt, col)
 		}
 	}
 
-	if (rules.length === 0) {
+	if (col.rules.length === 0) {
 		throw new Error('Не найдены правила')
 	}
 
 	const nonterminals: string[] = []
 	const terminals: string[] = []
-	for (const symbol of allSymbols) {
+
+	for (const symbol of col.unquotedSymbols) {
 		if (leftSides.has(symbol)) {
 			nonterminals.push(symbol)
 		}
 		else {
 			terminals.push(symbol)
+		}
+	}
+
+	for (const t of col.quotedTerminals) {
+		if (!terminals.includes(t)) {
+			terminals.push(t)
 		}
 	}
 
@@ -96,8 +144,8 @@ function parseGrammar(grammarText: string): Grammar {
 	return {
 		nonterminals,
 		terminals,
-		rules,
-		startSymbol: rules[0].left,
+		rules: col.rules,
+		startSymbol: col.rules[0].left,
 	}
 }
 

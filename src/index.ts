@@ -8,6 +8,7 @@ import {
 	processDeterminization,
 	processGrammarCYK,
 	processGrammarNormalize,
+	processGrammarReduce,
 	processGrammarToDFA,
 	processMinimization,
 	processRegexToNFA,
@@ -32,6 +33,7 @@ async function main(): Promise<void> {
 	const shouldDeterminize = args.includes('--determinize') || args.includes('-d')
 	const shouldGrammarToDFA = args.includes('--grammar-to-dfa') || args.includes('-g')
 	const shouldNormalize = args.includes('--normalize-grammar') || args.includes('-n')
+	const shouldReduce = args.includes('--reduce')
 	const shouldRegexToNFA = args.includes('--regex-to-nfa') || args.includes('-r')
 
 	const cykIdx = args.findIndex(a => a === '--cyk' || a.startsWith('--cyk='))
@@ -58,6 +60,9 @@ async function main(): Promise<void> {
 				throw new Error('Укажите строку: --cyk <строка> или --cyk=<строка>')
 			}
 			outputContent = processGrammarCYK(inputContent, cykWord)
+		}
+		else if (shouldReduce) {
+			outputContent = processGrammarReduce(inputContent)
 		}
 		else if (shouldNormalize) {
 			outputContent = processGrammarNormalize(inputContent)

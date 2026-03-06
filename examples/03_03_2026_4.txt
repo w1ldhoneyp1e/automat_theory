@@ -1,0 +1,3 @@
+S -> aAB | bBS | e
+A -> e | cBS
+B -> dB | e
