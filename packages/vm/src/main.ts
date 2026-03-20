@@ -1,18 +1,15 @@
 import * as fs from 'fs'
-import { Parser } from './Parser'
-import { Vm } from './Vm'
+import {Parser} from './Parser'
+import {Vm} from './Vm'
 
-function main(): void
-{
+function main(): void {
 	const args = process.argv.slice(2)
 	let source: string
 
-	if (args.length > 0)
-	{
+	if (args.length > 0) {
 		source = fs.readFileSync(args[0], 'utf-8')
 	}
-	else
-	{
+	else {
 		source = fs.readFileSync('/dev/stdin', 'utf-8')
 	}
 
@@ -22,8 +19,7 @@ function main(): void
 	const vm = new Vm()
 	vm.load(code)
 
-	const result = vm.run()
-	console.log(result)
+	vm.run()
 }
 
 main()

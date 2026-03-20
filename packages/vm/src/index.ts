@@ -1,17 +1,15 @@
-import { Parser } from './Parser'
-import { Vm } from './Vm'
+import {Parser} from './Parser'
 import {
-	Opcode,
 	ConstInstruction,
-	ReturnInstruction,
 	Instruction,
+	Opcode,
 } from './types'
+import {Vm} from './Vm'
 
 export {
+	ConstInstruction,
+	Instruction,
+	Opcode,
 	Parser,
 	Vm,
-	Opcode,
-	ConstInstruction,
-	ReturnInstruction,
-	Instruction,
 }
