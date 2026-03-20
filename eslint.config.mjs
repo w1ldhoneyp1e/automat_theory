@@ -29,6 +29,7 @@ export default [
 		ignores: [
 			'.cache/',
 			'node_modules',
+			'**/dist/**',
 		],
 	},
 	{
