@@ -2,6 +2,10 @@
   "name": "automaton-converter",
   "version": "1.0.0",
   "description": "Конвертер автоматов между форматами Мили и Мура",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "main": "src/index.ts",
   "scripts": {
     "start": "ts-node src/index.ts",
