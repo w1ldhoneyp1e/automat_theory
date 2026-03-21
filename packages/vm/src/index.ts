@@ -1,15 +1,28 @@
 import {Parser} from './Parser'
 import {
-	ConstInstruction,
-	Instruction,
+	type Instruction,
+	type NoArgInstruction,
+	type NoArgOpcode,
+	type NumArgInstruction,
+	type NumArgOpcode,
+	type Value,
+	type VmArray,
+	type VmProgram,
 	Opcode,
 } from './types'
-import {Vm} from './Vm'
+import {formatValue, Vm} from './Vm'
 
 export {
-	ConstInstruction,
+	formatValue,
 	Instruction,
+	NoArgInstruction,
+	NoArgOpcode,
+	NumArgInstruction,
+	NumArgOpcode,
 	Opcode,
 	Parser,
+	Value,
 	Vm,
+	VmArray,
+	VmProgram,
 }
