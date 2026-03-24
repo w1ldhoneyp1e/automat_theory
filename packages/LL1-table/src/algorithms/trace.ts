@@ -101,7 +101,7 @@ function traceLL1(table: LL1Row[], inputTokens: string[]): TraceStep[] {
 					tokens,
 					stackSnapshot: [...stack],
 					action: 'epsilon',
-					description: `ε-правило для «${row.symbol}»`,
+					description: `e-правило для «${row.symbol}»`,
 				})
 
 				if (stack.length > 0) {

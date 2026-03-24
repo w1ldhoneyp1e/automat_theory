@@ -19,8 +19,8 @@ function computeFirst(grammar: Grammar): Map<string, Set<string>> {
 			const firstLeft = first.get(left)!
 
 			if (right.length === 0) {
-				if (!firstLeft.has('ε')) {
-					firstLeft.add('ε')
+				if (!firstLeft.has('e')) {
+					firstLeft.add('e')
 					changed = true
 				}
 				continue
@@ -30,19 +30,19 @@ function computeFirst(grammar: Grammar): Map<string, Set<string>> {
 			for (const sym of right) {
 				const firstSym = first.get(sym) ?? new Set([sym])
 				for (const t of firstSym) {
-					if (t !== 'ε' && !firstLeft.has(t)) {
+					if (t !== 'e' && !firstLeft.has(t)) {
 						firstLeft.add(t)
 						changed = true
 					}
 				}
-				if (!firstSym.has('ε')) {
+				if (!firstSym.has('e')) {
 					allNullable = false
 					break
 				}
 			}
 
-			if (allNullable && !firstLeft.has('ε')) {
-				firstLeft.add('ε')
+			if (allNullable && !firstLeft.has('e')) {
+				firstLeft.add('e')
 				changed = true
 			}
 		}
@@ -56,7 +56,7 @@ function getFirstOfSequence(
 	first: Map<string, Set<string>>,
 ): Set<string> {
 	if (sequence.length === 0) {
-		return new Set(['ε'])
+		return new Set(['e'])
 	}
 
 	const result = new Set<string>()
@@ -65,18 +65,18 @@ function getFirstOfSequence(
 	for (const sym of sequence) {
 		const firstSym = first.get(sym) ?? new Set([sym])
 		for (const t of firstSym) {
-			if (t !== 'ε') {
+			if (t !== 'e') {
 				result.add(t)
 			}
 		}
-		if (!firstSym.has('ε')) {
+		if (!firstSym.has('e')) {
 			allNullable = false
 			break
 		}
 	}
 
 	if (allNullable) {
-		result.add('ε')
+		result.add('e')
 	}
 
 	return result

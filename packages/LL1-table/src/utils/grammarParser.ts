@@ -28,18 +28,18 @@ function parseGrammar(input: string): Grammar {
 				.split(/\s+/)
 				.filter(Boolean)
 				.map(s => (s === 'eps'
-					? 'ε'
+					? 'e'
 					: s))
 
 			const isEpsilon
         = symbols.length === 0
-        || (symbols.length === 1 && symbols[0] === 'ε')
+        || (symbols.length === 1 && symbols[0] === 'e')
 
 			rules.push({
 				left,
 				right: isEpsilon
 					? []
-					: symbols.filter(s => s !== 'ε'),
+					: symbols.filter(s => s !== 'e'),
 			})
 		}
 	}
@@ -64,4 +64,25 @@ function parseGrammar(input: string): Grammar {
 	}
 }
 
-export {parseGrammar}
+function formatGrammar(grammar: Grammar): string {
+	const grouped = new Map<string, string[][]>()
+	for (const nt of grammar.nonterminals) {
+		grouped.set(nt, [])
+	}
+	for (const {left, right} of grammar.rules) {
+		grouped.get(left)?.push(right)
+	}
+
+	return grammar.nonterminals
+		.map(nt => {
+			const alts = grouped.get(nt) ?? []
+			const rhs = alts.map(r => (r.length === 0
+				? 'e'
+				: r.join(' '))).join(' | ')
+
+			return `${nt} -> ${rhs}`
+		})
+		.join('\n')
+}
+
+export {parseGrammar, formatGrammar}

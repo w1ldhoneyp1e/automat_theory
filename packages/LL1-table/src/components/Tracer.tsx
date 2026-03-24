@@ -11,7 +11,7 @@ const ACTION_LABELS: Record<TraceStep['action'], string> = {
 	dispatch: 'Выбор варианта',
 	shift: 'Сдвиг',
 	call: 'Вызов нетерминала',
-	epsilon: 'ε-правило',
+	epsilon: 'e-правило',
 	error: 'Ошибка',
 	accept: 'Принято',
 }
@@ -39,6 +39,7 @@ function Tracer({table}: Props) {
 	}, [inputText, table])
 
 	const step = steps?.[currentStep]
+	const accepted = steps !== null && steps[steps.length - 1]?.action === 'accept'
 
 	return (
 		<section className="tracer-section">
@@ -59,77 +60,92 @@ function Tracer({table}: Props) {
 			</div>
 
 			{steps && (
-				<div className="tracer-body">
-					<div className="tracer-controls">
-						<button
-							className="btn btn-sm"
-							disabled={currentStep === 0}
-							onClick={() => setCurrentStep(s => s - 1)}
-						>
-							← Назад
-						</button>
-						<span className="step-counter">
-							Шаг {currentStep + 1} / {steps.length}
-						</span>
-						<button
-							className="btn btn-sm"
-							disabled={currentStep === steps.length - 1}
-							onClick={() => setCurrentStep(s => s + 1)}
-						>
-							Вперёд →
-						</button>
+				<>
+					<div className={`trace-result ${accepted
+						? 'trace-accepted'
+						: 'trace-rejected'}`}>
+						{accepted
+							? '✓ Строка принадлежит языку грамматики'
+							: '✗ Строка не принадлежит языку грамматики'
+						}
+						<span className="trace-result-steps">{steps.length} шагов</span>
 					</div>
 
-					{step && (
-						<>
-							<div className={`step-status ${ACTION_CLASSES[step.action]}`}>
-								<strong>{ACTION_LABELS[step.action]}:</strong> {step.description}
-							</div>
+					<div className="tracer-body">
+						<div className="tracer-controls">
+							<button
+								className="btn btn-sm"
+								disabled={currentStep === 0}
+								onClick={() => setCurrentStep(s => s - 1)}
+							>
+								← Назад
+							</button>
+							<span className="step-counter">
+								Шаг {currentStep + 1} / {steps.length}
+							</span>
+							<button
+								className="btn btn-sm"
+								disabled={currentStep === steps.length - 1}
+								onClick={() => setCurrentStep(s => s + 1)}
+							>
+								Вперёд →
+							</button>
+							<button
+								className="btn btn-sm"
+								onClick={() => setCurrentStep(steps.length - 1)}
+							>
+								В конец →|
+							</button>
+						</div>
 
-							<div className="tracer-state">
-								<div className="state-block">
-									<div className="state-label">Входная строка</div>
-									<div className="token-row">
-										{step.tokens.map((t, i) => (
-											<span
-												key={i}
-												className={`token ${i === step.tokenIndex
-? 'token-current'
-: i < step.tokenIndex
-? 'token-consumed'
-: ''}`}
-											>
-												{t}
-											</span>
-										))}
-									</div>
+						{step && (
+							<>
+								<div className={`step-status ${ACTION_CLASSES[step.action]}`}>
+									<strong>{ACTION_LABELS[step.action]}:</strong> {step.description}
 								</div>
 
-								<div className="state-block">
-									<div className="state-label">Стек (вершина → дно)</div>
-									<div className="stack-row">
-										{step.stackSnapshot.length === 0
-											? (
-												<span className="empty">пусто</span>
-											)
-											: (
-												[...step.stackSnapshot].reverse().map((id, i) => (
+								<div className="tracer-state">
+									<div className="state-block">
+										<div className="state-label">Входная строка</div>
+										<div className="token-row">
+											{step.tokens.map((t, i) => (
+												<span
+													key={i}
+													className={`token ${i === step.tokenIndex
+														? 'token-current'
+														: i < step.tokenIndex
+															? 'token-consumed'
+															: ''}`}
+												>
+													{t}
+												</span>
+											))}
+										</div>
+									</div>
+
+									<div className="state-block">
+										<div className="state-label">Стек (вершина → дно)</div>
+										<div className="stack-row">
+											{step.stackSnapshot.length === 0
+												? <span className="empty">пусто</span>
+												: [...step.stackSnapshot].reverse().map((id, i) => (
 													<span key={i} className="stack-item">{id}</span>
 												))
-											)}
+											}
+										</div>
+									</div>
+
+									<div className="state-block">
+										<div className="state-label">Текущая строка таблицы</div>
+										<div className="current-row-id">{step.rowId}</div>
 									</div>
 								</div>
 
-								<div className="state-block">
-									<div className="state-label">Текущая строка таблицы</div>
-									<div className="current-row-id">{step.rowId}</div>
-								</div>
-							</div>
-
-							<LL1TableView table={table} highlightRow={step.rowId} />
-						</>
-					)}
-				</div>
+								<LL1TableView table={table} highlightRow={step.rowId} />
+							</>
+						)}
+					</div>
+				</>
 			)}
 		</section>
 	)

@@ -18,6 +18,7 @@ function LL1TableView({table, highlightRow}: Props) {
 						<th>Переход</th>
 						<th>Сдвиг</th>
 						<th>Стек</th>
+						<th>Конец</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -38,16 +39,13 @@ function LL1TableView({table, highlightRow}: Props) {
 							</td>
 							<td className="cell-nm">
 								{row.nm.length > 0
-									? (
-										<span className="nm-list">{`{${row.nm.join(', ')}}`}</span>
-									)
-									: (
-										<span className="empty">—</span>
-									)}
+									? <span className="nm-list">{`{${row.nm.join(', ')}}`}</span>
+									: <span className="empty">—</span>
+								}
 							</td>
 							<td className={`cell-bool ${row.error
-? 'bool-true'
-: 'bool-false'}`}>
+								? 'bool-true'
+								: 'bool-false'}`}>
 								{row.error
 									? 'true'
 									: 'false'}
@@ -55,19 +53,27 @@ function LL1TableView({table, highlightRow}: Props) {
 							<td className="cell-transition">
 								{row.transition !== null
 									? row.transition
-									: <span className="null">null</span>}
+									: <span className="null">null</span>
+								}
 							</td>
 							<td className={`cell-bool ${row.shift
-? 'bool-true'
-: ''}`}>
+								? 'bool-true'
+								: ''}`}>
 								{row.shift
 									? 'true'
 									: 'false'}
 							</td>
 							<td className={`cell-bool ${row.stack
-? 'bool-true'
-: ''}`}>
+								? 'bool-true'
+								: ''}`}>
 								{row.stack
+									? 'true'
+									: 'false'}
+							</td>
+							<td className={`cell-bool ${row.end
+								? 'bool-end'
+								: ''}`}>
+								{row.end
 									? 'true'
 									: 'false'}
 							</td>

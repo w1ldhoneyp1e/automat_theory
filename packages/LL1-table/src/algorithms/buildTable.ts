@@ -42,6 +42,7 @@ function buildLL1Table(grammar: Grammar): LL1Row[] {
 
 		for (let i = 0; i < rules.length; i++) {
 			const nm = getDirectingSet(rules[i].right, nt)
+			const isEpsilonRule = rules[i].right.length === 0
 			rows.push({
 				id: rows.length + 1,
 				symbol: nt,
@@ -50,6 +51,7 @@ function buildLL1Table(grammar: Grammar): LL1Row[] {
 				transition: null,
 				shift: false,
 				stack: false,
+				end: isEpsilonRule && nm.includes('$'),
 			})
 		}
 
@@ -97,6 +99,10 @@ function buildLL1Table(grammar: Grammar): LL1Row[] {
 						: currentIdx + 2
 					: null
 
+				const end = isTerminal && isLast
+					? (follow.get(nt)?.has('$') ?? false)
+					: false
+
 				rows.push({
 					id: rows.length + 1,
 					symbol: sym,
@@ -105,6 +111,7 @@ function buildLL1Table(grammar: Grammar): LL1Row[] {
 					transition,
 					shift: isTerminal,
 					stack: !isTerminal && !isLast,
+					end,
 				})
 
 				if (!isTerminal) {

@@ -18,6 +18,7 @@ interface LL1Row {
 	transition: number | null,
 	shift: boolean,
 	stack: boolean,
+	end: boolean,
 }
 
 type TraceAction = 'dispatch' | 'shift' | 'call' | 'epsilon' | 'error' | 'accept'

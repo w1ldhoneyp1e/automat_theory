@@ -30,12 +30,12 @@ function computeFollow(
 				for (const restSym of rest) {
 					const firstRest = first.get(restSym) ?? new Set([restSym])
 					for (const t of firstRest) {
-						if (t !== 'ε' && !followSym.has(t)) {
+						if (t !== 'e' && !followSym.has(t)) {
 							followSym.add(t)
 							changed = true
 						}
 					}
-					if (!firstRest.has('ε')) {
+					if (!firstRest.has('e')) {
 						restNullable = false
 						break
 					}
